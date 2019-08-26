@@ -25,13 +25,13 @@ File input structure example
       CODEPAGE : "UTF-8"
       DATABASETYPE : "SQL SERVER"
       FOLDER
-        NAME : "PRD_CMSN_EXPT_DDOS_TRANSACAO"
+        NAME : "Example"
         GROUP : ""
-        OWNER : "Administrator"
+        OWNER : "Admin"
         SHARED : "NOTSHARED"
-        DESCRIPTION : "PRD_CMSN_EXPT_DDOS_TRANSACAO PRD_CMSN_EXPT_DDOS_CADASTRO PRD_CMSN_EXPT_DDOS_PRODUTO"
+        DESCRIPTION : "EXAMPLE"
         PERMISSIONS : "rwx------"
-        UUID : "e255b70f-2dda-43f0-b450-23ae52ff3165"
+        UUID : "e255b70f"
         SOURCE: [{}]
         TARGET: [{}]
         MAPPING: [{}]
