@@ -269,9 +269,22 @@ class FileProcess(object):
             data = json.loads(data_file.read())
         return data
 
+    def _write_files(self, data_frames: list, names_sheets: list, writer):
+
+        if len(data_frames) == len(names_sheets):
+            ValueError("Dataframes and names sheets must be equal lengths")
+
+        for df, sheet_name in zip(data_frames, names_sheets):
+            # Write each dataframe to a different worksheet.
+            df.to_excel(writer, sheet_name=sheet_name)
+
+        # Close the Pa
+
     def generate_documentation(self, folders: list):
 
         for folder in folders:
+
+            dfs, sheets = [], []
 
             # Sources
             sources = [s.to_dict() for s in folder.sources]
@@ -280,12 +293,14 @@ class FileProcess(object):
             for s in sources:
                 source_fields.extend(s.pop('source_fields', None))
 
-            df_sources = pd.DataFrame(sources)
+            dfs.append(pd.DataFrame(sources))
+            sheets.append("Sources")
 
             # source fields
             source_fields = [sf.to_dict() for sf in source_fields]
 
-            df_source_fields = pd.DataFrame(source_fields)
+            dfs.append(pd.DataFrame(source_fields))
+            sheets.append("Source Fields")
 
             # targets
             targets = [t.to_dict() for t in folder.targets]
@@ -294,12 +309,14 @@ class FileProcess(object):
             for t in targets:
                 target_fields.extend(t.pop('target_fields', None))
 
-            df_targets = pd.DataFrame(targets)
+            dfs.append(pd.DataFrame(targets))
+            sheets.append("Targets")
 
             # target fields
             target_fields = [tf.to_dict() for tf in target_fields]
 
-            df_target_fields = pd.DataFrame(target_fields)
+            dfs.append(pd.DataFrame(target_fields))
+            sheets.append("Target Fields")
 
             # mappings
             mappings = [m.to_dict() for m in folder.mappings]
@@ -310,11 +327,14 @@ class FileProcess(object):
                 connectors.extend(m.pop('connectors', None))
                 transformations.extend(m.pop('transformations', None))
 
-            df_mappings = pd.DataFrame(mappings)
+            dfs.append(pd.DataFrame(mappings))
+            sheets.append("Mappings")
 
             # connectors
             connectors = [c.to_dict() for c in connectors]
-            df_connectors = pd.DataFrame(connectors)
+
+            dfs.append(pd.DataFrame(connectors))
+            sheets.append("Connectors")
 
             # transformations
             transformations = [t.to_dict() for t in transformations]
@@ -323,27 +343,19 @@ class FileProcess(object):
             for t in transformations:
                 transformation_fields.extend(t.pop('transformation_fields', None))
 
-            df_transformations = pd.DataFrame(transformations)
+            dfs.append(pd.DataFrame(transformations))
+            sheets.append("Transformations")
 
             # transformation_fields
             transformation_fields = [tf.to_dict() for tf in transformation_fields]
-            df_transform_fields = pd.DataFrame(transformation_fields)
+
+            dfs.append(pd.DataFrame(transformation_fields))
+            sheets.append("Transformation Fields")
 
             # Create a Pandas Excel writer using XlsxWriter as the engine.
             writer = pd.ExcelWriter('{}{}.xlsx'.format(self.output_folder, folder.folder_name), engine='xlsxwriter')
 
-            # Write each dataframe to a different worksheet.
-            df_sources.to_excel(writer, sheet_name='Sources', index=False)
-            df_source_fields.to_excel(writer, sheet_name='Source Fields', index=False)
-            df_targets.to_excel(writer, sheet_name='Targets', index=False)
-            df_target_fields.to_excel(writer, sheet_name='Target Fields', index=False)
-            df_mappings.to_excel(writer, sheet_name='Mappings', index=False)
-            df_transformations.to_excel(writer, sheet_name='Tranformation', index=False)
-            df_transform_fields.to_excel(writer, sheet_name='Tranformation Fields', index=False)
-            df_connectors.to_excel(writer, sheet_name='Connectors', index=False)
-
-            # Close the Pandas Excel writer and output the Excel file.
-            writer.save()
+            self._write_files(dfs, sheets, writer)
 
         print("Finish!!")
 
