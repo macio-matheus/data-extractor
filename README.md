@@ -14,7 +14,7 @@ file_process.process()
 
 ```
 
-Execute .py file
+Execute .py (python 3.6.4) file
 
 ```sh
 
