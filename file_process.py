@@ -31,7 +31,7 @@ class FileProcess(object):
         for _folder in folder_object:
             folder_name = _folder['NAME']
 
-            # sources **** trazer nomes dos mappi
+            # sources
             sources = self._get_sources(_folder)
 
             # targets
@@ -112,7 +112,8 @@ class FileProcess(object):
                                                       _transform_field['DEFAULTVALUE'],
                                                       _transform_field['PRECISION'],
                                                       transformation['NAME'],
-                                                      _transform_field.get('EXPRESSION'))
+                                                      _transform_field.get('EXPRESSION'),
+                                                      transformation['MAPPING_NAME'])
                 transform_fields.append(transform_field)
 
         elif isinstance(transformation.get('TRANSFORMFIELD'), dict):
@@ -123,7 +124,8 @@ class FileProcess(object):
                                                   transformation['TRANSFORMFIELD']['DEFAULTVALUE'],
                                                   transformation['TRANSFORMFIELD']['PRECISION'],
                                                   transformation['NAME'],
-                                                  transformation['TRANSFORMFIELD'].get('EXPRESSION'))
+                                                  transformation['TRANSFORMFIELD'].get('EXPRESSION'),
+                                                  transformation['MAPPING_NAME'])
             transform_fields.append(transform_field)
 
         return transform_fields
@@ -138,6 +140,7 @@ class FileProcess(object):
         if isinstance(mapping.get('TRANSFORMATION'), list):
 
             for _transformation in mapping['TRANSFORMATION']:
+                _transformation['MAPPING_NAME'] = mapping['NAME']
                 transformation_fields = self._get_transformation_fields(_transformation)
                 transformation_sql = self._get_query(_transformation)
                 transformation = Transformation(_transformation['NAME'],
@@ -147,6 +150,7 @@ class FileProcess(object):
 
         elif isinstance(mapping.get('TRANSFORMATION'), dict):
 
+            mapping['TRANSFORMATION']['MAPPING_NAME'] = mapping['NAME']
             transformation_fields = self._get_transformation_fields(mapping['TRANSFORMATION'])
             transformation_sql = self._get_query(mapping['TRANSFORMATION'])
             transformation = Transformation(mapping['TRANSFORMATION']['NAME'],
@@ -213,6 +217,68 @@ class FileProcess(object):
 
         return target_fields
 
+    def _get_session_name(self, folder: dict, mapping_name: str):
+
+        if isinstance(folder.get('SESSION'), list):
+            for session in folder['SESSION']:
+
+                if session['MAPPINGNAME'] == mapping_name:
+                    return session['NAME']
+
+        elif isinstance(folder.get('SESSION'), dict):
+
+            if folder['SESSION']['MAPPINGNAME'] == mapping_name:
+                return folder['SESSION']['NAME']
+
+        return None
+
+    def _get_task_name(self, task_instance: dict):
+
+        if not task_instance['NAME']:
+            return None
+
+        if 's_' in task_instance['TASKNAME'] and task_instance['TASKTYPE'] == 'Session':
+            return task_instance['TASKNAME']
+
+        return None
+
+    def _get_workflow_name(self, folder: dict, session_name: str):
+
+        if isinstance(folder.get('WORKFLOW'), list):
+            for workflow in folder['WORKFLOW']:
+
+                if isinstance(workflow['TASKINSTANCE'], list):
+
+                    for task_instance in workflow['TASKINSTANCE']:
+
+                        task_name = self._get_task_name(task_instance)
+                        if task_name == session_name:
+                            return workflow['NAME']
+
+                elif isinstance(workflow['TASKINSTANCE'], dict):
+
+                    task_name = self._get_task_name(workflow['TASKINSTANCE'])
+                    if task_name == session_name:
+                        return workflow['NAME']
+
+        elif isinstance(folder.get('WORKFLOW'), dict):
+
+            if isinstance(folder['WORKFLOW']['TASKINSTANCE'], list):
+
+                for task_instance in folder['WORKFLOW']['TASKINSTANCE']:
+
+                    task_name = self._get_task_name(task_instance)
+                    if task_name:
+                        return task_name
+
+            elif isinstance(folder['WORKFLOW']['TASKINSTANCE'], dict):
+
+                task_name = self._get_task_name(folder['WORKFLOW']['TASKINSTANCE'])
+                if task_name:
+                    return task_name
+
+        return None
+
     def _get_mappings(self, folder: dict):
 
         mappings = []
@@ -223,16 +289,22 @@ class FileProcess(object):
         if isinstance(folder.get('MAPPING'), list):
 
             for _mapping in folder['MAPPING']:
+                session_name = self._get_session_name(folder, _mapping['NAME'])
+                workflow_name = self._get_workflow_name(folder, session_name)
                 connectors = self._get_connectors(_mapping)
                 transformations = self._get_transformations(_mapping)
-                mapping = Mapping(_mapping['NAME'], connectors, transformations, folder['NAME'])
+                mapping = Mapping(_mapping['NAME'], connectors, transformations, folder['NAME'], session_name,
+                                  workflow_name)
                 mappings.append(mapping)
 
         elif isinstance(folder.get('MAPPING'), dict):
 
+            session_name = self._get_session_name(folder, folder['MAPPING']['NAME'])
+            workflow_name = self._get_workflow_name(folder, session_name)
             connectors = self._get_connectors(folder['MAPPING'])
             transformations = self._get_transformations(folder['MAPPING'])
-            mapping = Mapping(folder['MAPPING']['NAME'], connectors, transformations, folder['NAME'])
+            mapping = Mapping(folder['MAPPING']['NAME'], connectors, transformations, folder['NAME'], session_name,
+                              workflow_name)
             mappings.append(mapping)
 
         return mappings
@@ -277,8 +349,6 @@ class FileProcess(object):
         for df, sheet_name in zip(data_frames, names_sheets):
             # Write each dataframe to a different worksheet.
             df.to_excel(writer, sheet_name=sheet_name)
-
-        # Close the Pa
 
     def generate_documentation(self, folders: list):
 
@@ -367,5 +437,6 @@ class FileProcess(object):
 
 
 if __name__ == '__main__':
-    file_process = FileProcess(input_file='./datasets/todosObjetos.json', output_folder='./datasets/generated_doc/')
+    file_process = FileProcess(input_file='/home/jovyan/work/datasets/todosObjetos.json',
+                               output_folder='/home/jovyan/work/datasets/log/')
     file_process.process()

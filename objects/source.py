@@ -2,7 +2,7 @@ from objects.base import Base
 
 
 class Source(Base):
-    def __init__(self, database_type: str, database_name: str, source_name: str, owner_name: str, source_fields: str,
+    def __init__(self, database_type: str, database_name: str, source_name: str, owner_name: str, source_fields: list,
                  folder_name: str):
         self.database_type = database_type
         self.database_name = database_name

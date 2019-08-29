@@ -3,7 +3,7 @@ from objects.base import Base
 
 class TransformationField(Base):
     def __init__(self, data_type: str, name: str, port_type: str, default_value: str, precision: str,
-                 transformation_name: str, expression: str):
+                 transformation_name: str, expression: str, mapping_name: str):
         self.data_type = data_type
         self.name = name
         self.port_type = port_type
@@ -11,3 +11,4 @@ class TransformationField(Base):
         self.precision = precision
         self.transformation_name = transformation_name,
         self.expression = expression
+        self.mapping_name = mapping_name
