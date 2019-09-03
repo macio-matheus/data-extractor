@@ -1,4 +1,4 @@
-# PowerCenter data extractor
+# Data extractor
 
 Script to extract structured data in spreadsheets from PowerCenter exported .xmls (converted to .jsons) files.
 
